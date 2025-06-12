@@ -1,0 +1,264 @@
+import { useState, useEffect, useContext } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { HiMenu, HiX, HiLogout } from 'react-icons/hi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { AuthContext } from '../context/AuthContext'; // Import AuthContext
+
+const Navbar = () => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [activeSection, setActiveSection] = useState('');
+    const location = useLocation();
+    const navigate = useNavigate();
+    const { isLoggedIn, logout } = useContext(AuthContext); // Access auth state and logout function
+
+    const toggleMenu = () => setIsOpen(!isOpen);
+
+    const scrollToSection = (sectionId) => {
+        if (location.pathname === '/') {
+            const element = document.getElementById(sectionId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+                setIsOpen(false);
+                setActiveSection(sectionId);
+            }
+        }
+    };
+
+    const handleLogoClick = () => {
+        if (isLoggedIn && location.pathname === '/home') {
+            // If logged in and on HomePage, reload HomePage
+            navigate('/home');
+        } else {
+            // Otherwise, go to LandingPage
+            navigate('/');
+        }
+    };
+
+    const handleLogout = () => {
+        logout(); // Clear login state and token
+        navigate('/'); // Redirect to LandingPage
+        setIsOpen(false);
+    };
+
+    const isActive = (path) => location.pathname === path;
+    const isSectionActive = (id) => location.pathname === '/' && activeSection === id;
+
+    useEffect(() => {
+        // Reset section highlight when route changes
+        setActiveSection('');
+    }, [location.pathname]);
+
+    return (
+        <nav className="bg-white shadow-lg sticky top-0 z-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex justify-between items-center h-16">
+                    {/* Logo */}
+                    <button onClick={handleLogoClick} className="flex items-center space-x-2">
+                        <img
+                            src="/ggu foodies.jpg"
+                            alt="GGU Foodies Logo"
+                            className="w-10 h-10 rounded-lg"
+                        />
+                        <span className="text-xl font-bold text-gray-800">GGU Foodies</span>
+                    </button>
+
+                    {/* Desktop Menu */}
+                    <div className="hidden md:flex items-center space-x-8">
+                        {/* Home */}
+                        <div className="relative">
+                            {location.pathname === '/' ? (
+                                <button
+                                    onClick={() => scrollToSection('top')}
+                                    className={`text-gray-700 hover:text-primary-600 font-medium ${isActive('/') && activeSection === '' ? 'text-primary-600' : ''}`}
+                                >
+                                    Home
+                                    {isActive('/') && activeSection === '' && (
+                                        <span className="absolute bottom-[-4px] left-0 w-full h-0.5 bg-primary-600"></span>
+                                    )}
+                                </button>
+                            ) : (
+                                <Link
+                                    to="/"
+                                    className={`text-gray-700 hover:text-primary-600 font-medium ${isActive('/') ? 'text-primary-600' : ''}`}
+                                >
+                                    Home
+                                </Link>
+                            )}
+                        </div>
+
+                        {/* All Food Courts */}
+                        <div className="relative">
+                            {location.pathname === '/' ? (
+                                <button
+                                    onClick={() => {
+                                        if (isLoggedIn) {
+                                            navigate('/home');
+                                        } else {
+                                            navigate('/login');
+                                        }
+                                    }}
+                                    className={`text-gray-700 hover:text-primary-600 font-medium ${isSectionActive('food-courts') ? 'text-primary-600' : ''}`}
+                                >
+                                    All Food Courts
+                                    {isSectionActive('food-courts') && (
+                                        <span className="absolute bottom-[-4px] left-0 w-full h-0.5 bg-primary-600"></span>
+                                    )}
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => {
+                                        if (isLoggedIn) {
+                                            navigate('/home');
+                                        } else {
+                                            navigate('/login');
+                                        }
+                                    }}
+                                    className="text-gray-700 hover:text-primary-600 font-medium"
+                                >
+                                    All Food Courts
+                                </button>
+                            )}
+                        </div>
+
+                        {/* About */}
+                        <div className="relative">
+                            <Link
+                                to="/about"
+                                className={`text-gray-700 hover:text-primary-600 font-medium ${isActive('/about') ? 'text-primary-600' : ''}`}
+                            >
+                                About
+                                {isActive('/about') && (
+                                    <span className="absolute bottom-[-4px] left-0 w-full h-0.5 bg-primary-600"></span>
+                                )}
+                            </Link>
+                        </div>
+
+                        {/* Admin Panel */}
+                        <div className="relative">
+                            <Link
+                                to="/admin-panel"
+                                className={`text-gray-700 hover:text-primary-600 font-medium ${isActive('/admin-panel') ? 'text-primary-600' : ''}`}
+                            >
+                                Admin Panel
+                                {isActive('/admin-panel') && (
+                                    <span className="absolute bottom-[-4px] left-0 w-full h-0.5 bg-primary-600"></span>
+                                )}
+                            </Link>
+                        </div>
+
+                        {/* Logout (only when logged in) */}
+                        {isLoggedIn && (
+                            <button
+                                onClick={handleLogout}
+                                className="text-gray-700 hover:text-red-600 font-medium flex items-center space-x-1"
+                            >
+                                <HiLogout className="w-5 h-5" />
+                                <span>Logout</span>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Mobile Toggle */}
+                    <div className="flex items-center">
+                        <button
+                            onClick={toggleMenu}
+                            className="md:hidden p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                        >
+                            {isOpen ? <HiX className="w-6 h-6" /> : <HiMenu className="w-6 h-6" />}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Mobile Menu */}
+                <AnimatePresence>
+                    {isOpen && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="md:hidden bg-white border-t border-gray-100"
+                        >
+                            <div className="px-2 pt-2 pb-3 space-y-1">
+                                {location.pathname === '/' ? (
+                                    <button
+                                        onClick={() => scrollToSection('top')}
+                                        className="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md"
+                                    >
+                                        Home
+                                    </button>
+                                ) : (
+                                    <Link
+                                        to="/"
+                                        className="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md"
+                                        onClick={() => setIsOpen(false)}
+                                    >
+                                        Home
+                                    </Link>
+                                )}
+
+                                <button
+                                    onClick={() => {
+                                        if (isLoggedIn) {
+                                            navigate('/home');
+                                        } else {
+                                            navigate('/login');
+                                        }
+                                        setIsOpen(false);
+                                    }}
+                                    className="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md"
+                                >
+                                    All Food Courts
+                                </button>
+
+                                <Link
+                                    to="/about"
+                                    className="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    About
+                                </Link>
+
+                                <Link
+                                    to="/admin-panel"
+                                    className="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md"
+                                    onClick={() => setIsOpen(false)}
+                                >
+                                    Admin Panel
+                                </Link>
+
+                                {isLoggedIn ? (
+                                    <button
+                                        onClick={handleLogout}
+                                        className="block px-3 py-2 text-gray-700 hover:text-red-600 hover:bg-gray-50 rounded-md flex items-center space-x-1"
+                                    >
+                                        <HiLogout className="w-5 h-5" />
+                                        <span>Logout</span>
+                                    </button>
+                                ) : (
+                                    <>
+                                        <Link
+                                            to="/login"
+                                            className="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md"
+                                            onClick={() => setIsOpen(false)}
+                                        >
+                                            Login
+                                        </Link>
+                                        <Link
+                                            to="/signup"
+                                            className="block px-3 py-2 text-gray-700 hover:text-primary-600 hover:bg-gray-50 rounded-md"
+                                            onClick={() => setIsOpen(false)}
+                                        >
+                                            Sign Up
+                                        </Link>
+                                    </>
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+        </nav>
+    );
+};
+
+export default Navbar;
