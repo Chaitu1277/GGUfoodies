@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -11,57 +11,44 @@ import {
     HiExclamationCircle
 } from 'react-icons/hi';
 import toast from 'react-hot-toast';
+import axios from 'axios';
+import { AuthContext } from '../context/AuthContext';
 
 const CartPage = () => {
-    const [cartItems, setCartItems] = useState([
-        {
-            id: 1,
-            name: 'Crispy Chicken Burger',
-            description: 'Juicy chicken patty with crispy coating, lettuce, tomato, and special sauce',
-            price: 149,
-            quantity: 2,
-            image: 'https://images.pexels.com/photos/1639557/pexels-photo-1639557.jpeg?auto=compress&cs=tinysrgb&w=300',
-            restaurant: 'CFC Express'
-        },
-        {
-            id: 2,
-            name: 'Butter Chicken',
-            description: 'Rich and creamy tomato-based curry with tender chicken pieces',
-            price: 199,
-            quantity: 1,
-            image: 'https://images.pexels.com/photos/2474658/pexels-photo-2474658.jpeg?auto=compress&cs=tinysrgb&w=300',
-            restaurant: 'Spice Garden'
-        },
-        {
-            id: 3,
-            name: 'Chocolate Brownie',
-            description: 'Warm chocolate brownie with vanilla ice cream and chocolate sauce',
-            price: 89,
-            quantity: 1,
-            image: 'https://images.pexels.com/photos/2373520/pexels-photo-2373520.jpeg?auto=compress&cs=tinysrgb&w=300',
-            restaurant: 'Sweet Delights'
-        }
-    ]);
-
-    const [orderType, setOrderType] = useState(''); // 'dining' or 'takeaway'
+    const { cartItems, updateCart } = useContext(AuthContext);
+    const [orderType, setOrderType] = useState('');
     const [showRulesPopup, setShowRulesPopup] = useState(false);
     const [acceptedRules, setAcceptedRules] = useState(false);
 
-    const updateQuantity = (id, newQuantity) => {
-        if (newQuantity === 0) {
-            removeItem(id);
-            return;
+    const updateQuantity = async (itemName, newQuantity) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.put(
+                `http://localhost:5000/api/cart/update/${encodeURIComponent(itemName)}`,
+                { quantity: newQuantity },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            updateCart(response.data.items);
+            if (newQuantity === 0) {
+                toast.success('Item removed from cart');
+            }
+        } catch (error) {
+            toast.error('Failed to update cart');
         }
-        setCartItems(items =>
-            items.map(item =>
-                item.id === id ? { ...item, quantity: newQuantity } : item
-            )
-        );
     };
 
-    const removeItem = (id) => {
-        setCartItems(items => items.filter(item => item.id !== id));
-        toast.success('Item removed from cart');
+    const removeItem = async (itemName) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.delete(
+                `http://localhost:5000/api/cart/remove/${encodeURIComponent(itemName)}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            updateCart(response.data.items);
+            toast.success('Item removed from cart');
+        } catch (error) {
+            toast.error('Failed to remove item from cart');
+        }
     };
 
     const calculateSubtotal = () => {
@@ -71,10 +58,8 @@ const CartPage = () => {
     const calculateServiceCharge = () => {
         if (orderType === 'takeaway') {
             return cartItems.reduce((total, item) => total + (10 * item.quantity), 0);
-        } else if (orderType === 'dining') {
-            return cartItems.reduce((total, item) => total + (10 * item.quantity), 0);
         }
-        return 0;
+        return 0; // No charge for dining
     };
 
     const calculateTotal = () => {
@@ -96,7 +81,7 @@ const CartPage = () => {
         }
         setShowRulesPopup(false);
         toast.success('Proceeding to payment gateway...');
-        // Navigate to payment page
+        // Navigate to payment page (implement as needed)
     };
 
     const rules = [
@@ -104,7 +89,7 @@ const CartPage = () => {
             icon: <HiExclamationCircle className="w-5 h-5 text-red-600" />,
             text: orderType === 'takeaway'
                 ? 'Takeaway will be charged ₹10 per item'
-                : 'Dining will be charged ₹10 per item'
+                : 'No additional charges for dining'
         },
         {
             icon: <HiExclamationCircle className="w-5 h-5 text-red-600" />,
@@ -170,7 +155,7 @@ const CartPage = () => {
                     <div className="lg:col-span-2 space-y-4">
                         {cartItems.map((item) => (
                             <motion.div
-                                key={item.id}
+                                key={item.name}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -20 }}
@@ -190,7 +175,7 @@ const CartPage = () => {
                                                 <p className="text-sm text-gray-600">{item.restaurant}</p>
                                             </div>
                                             <button
-                                                onClick={() => removeItem(item.id)}
+                                                onClick={() => removeItem(item.name)}
                                                 className="p-1 hover:bg-red-50 rounded-lg transition-colors"
                                             >
                                                 <HiTrash className="w-4 h-4 text-red-600" />
@@ -204,7 +189,7 @@ const CartPage = () => {
 
                                             <div className="flex items-center space-x-3">
                                                 <button
-                                                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                                    onClick={() => updateQuantity(item.name, item.quantity - 1)}
                                                     className="w-8 h-8 bg-gray-100 hover:bg-red-100 rounded-full flex items-center justify-center transition-colors"
                                                 >
                                                     <HiMinus className="w-4 h-4 text-gray-600" />
@@ -215,7 +200,7 @@ const CartPage = () => {
                                                 </span>
 
                                                 <button
-                                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                                    onClick={() => updateQuantity(item.name, item.quantity + 1)}
                                                     className="w-8 h-8 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center transition-colors"
                                                 >
                                                     <HiPlus className="w-4 h-4 text-red-600" />
@@ -248,7 +233,7 @@ const CartPage = () => {
                                         />
                                         <div>
                                             <span className="font-medium text-gray-800">Dining</span>
-                                            <p className="text-sm text-gray-600">Eat at the food court (+₹10 per item)</p>
+                                            <p className="text-sm text-gray-600">Eat at the food court (No extra charge)</p>
                                         </div>
                                     </label>
 
@@ -276,7 +261,7 @@ const CartPage = () => {
                                     >
                                         <p className="text-sm text-red-700">
                                             {orderType === 'dining'
-                                                ? '₹10 per item will be added for dining service'
+                                                ? 'No additional charges for dining'
                                                 : '₹10 per item will be added for takeaway packaging'
                                             }
                                         </p>
@@ -291,9 +276,9 @@ const CartPage = () => {
                                     <span>₹{calculateSubtotal()}</span>
                                 </div>
 
-                                {orderType && (
+                                {orderType === 'takeaway' && (
                                     <div className="flex justify-between text-gray-600">
-                                        <span>{orderType === 'dining' ? 'Dining' : 'Takeaway'} charges</span>
+                                        <span>Takeaway charges</span>
                                         <span>₹{calculateServiceCharge()}</span>
                                     </div>
                                 )}
@@ -311,8 +296,8 @@ const CartPage = () => {
                                 onClick={handleContinue}
                                 disabled={!orderType}
                                 className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${orderType
-                                        ? 'bg-red-600 hover:bg-red-700 text-white'
-                                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                     }`}
                             >
                                 Continue to Payment
@@ -384,8 +369,8 @@ const CartPage = () => {
                                         onClick={handleProceedToPayment}
                                         disabled={!acceptedRules}
                                         className={`flex-1 py-3 px-4 rounded-lg font-medium transition-colors ${acceptedRules
-                                                ? 'bg-red-600 hover:bg-red-700 text-white'
-                                                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                            ? 'bg-red-600 hover:bg-red-700 text-white'
+                                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                                             }`}
                                     >
                                         Proceed to Payment

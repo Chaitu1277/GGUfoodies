@@ -15,18 +15,18 @@ import {
     HiEye,
     HiPlus
 } from 'react-icons/hi';
-import { AuthContext } from '../context/AuthContext'; // Import AuthContext
+import { AuthContext } from '../context/AuthContext';
+import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const HomePage = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const { logout } = useContext(AuthContext); // Access logout function
+    const { logout, cartItems, cartCount, updateCart } = useContext(AuthContext);
     const { selectedCourt } = location.state || {};
     const [searchQuery, setSearchQuery] = useState(selectedCourt ? selectedCourt.name : '');
     const [itemSearchQuery, setItemSearchQuery] = useState('');
     const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const [cartCount, setCartCount] = useState(0);
-    const [cartItems, setCartItems] = useState([]);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [selectedFoodCourt, setSelectedFoodCourt] = useState(selectedCourt || null);
     const [selectedCategory, setSelectedCategory] = useState('All Categories');
@@ -147,24 +147,26 @@ const HomePage = () => {
         setErrorMessage('');
     };
 
-    const handleAddItem = (item) => {
-        if (cartItems.length === 0) {
-            setCartItems([item]);
-            setCartCount(1);
-            return;
+    const handleAddItem = async (item) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.post(
+                'http://localhost:5000/api/cart/add',
+                {
+                    name: item.name,
+                    description: item.description,
+                    price: item.price,
+                    image: item.image,
+                    restaurant: item.court,
+                },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            updateCart(response.data.items);
+            toast.success('Item added to cart');
+        } catch (error) {
+            setErrorMessage(error.response?.data.message || 'Failed to add item to cart');
+            setTimeout(() => setErrorMessage(''), 3000);
         }
-
-        const cartFoodCourt = cartItems[0].court;
-        if (item.court !== cartFoodCourt) {
-            setErrorMessage('Please add items from the same food court.');
-            setTimeout(() => {
-                setErrorMessage('');
-            }, 3000);
-            return;
-        }
-
-        setCartItems(prev => [...prev, item]);
-        setCartCount(prev => prev + 1);
     };
 
     const handleHomeClick = () => {
@@ -172,12 +174,12 @@ const HomePage = () => {
         setSelectedFoodCourt(null);
         setSelectedCategory('All Categories');
         setErrorMessage('');
-        window.scrollTo({ top: 0, behavior: 'smooth' }); // Scroll to top for a "homepage" feel
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleLogout = () => {
-        logout(); // Clear login state and token
-        navigate('/'); // Redirect to LandingPage
+        logout();
+        navigate('/');
         setIsProfileOpen(false);
     };
 

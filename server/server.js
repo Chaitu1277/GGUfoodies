@@ -7,6 +7,7 @@ import cors from 'cors';
 import connectDB from './config/db.js';
 import authRoutes from './routes/auth.js';
 import otpRoutes from './routes/otp.js';
+import cartRoutes from './routes/cart.js'; // Add cart routes
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/otp', otpRoutes);
+app.use('/api/cart', cartRoutes); // Add cart routes
 
 // Root Route
 app.get('/', (req, res) => {
