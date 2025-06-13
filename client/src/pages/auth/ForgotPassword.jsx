@@ -1,19 +1,21 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { HiPhone, HiMail, HiLockClosed } from 'react-icons/hi';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 
 const ForgotPassword = () => {
-    const [step, setStep] = useState(1); // 1: Phone/Email, 2: OTP, 3: New Password
-    const [contactMethod, setContactMethod] = useState('phone'); // 'phone' or 'email'
+    const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
-        contact: '',
+        email: '',
+        phone: '',
         otp: '',
         newPassword: '',
         confirmPassword: ''
     });
     const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         setFormData({
@@ -27,16 +29,38 @@ const ForgotPassword = () => {
         setIsLoading(true);
 
         try {
-            // API call to send OTP
-            console.log('Sending OTP to:', formData.contact, 'via', contactMethod);
+            const { email, phone } = formData;
+            if (!email || !phone) {
+                throw new Error('Both email and phone are required');
+            }
 
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            toast.success(`OTP sent to your ${contactMethod}`);
+            const response = await axios.post('http://localhost:5000/api/otp/generate-otp', {
+                email,
+                phone,
+                method: 'email' // Default to email for forgot password
+            });
+            toast.success(`OTP sent to your email for password reset`);
             setStep(2);
         } catch (error) {
-            toast.error('Failed to send OTP. Please try again.');
+            toast.error(error.message || 'Failed to send OTP. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleResendOTP = async () => {
+        setIsLoading(true);
+
+        try {
+            const { email, phone } = formData;
+            const response = await axios.post('http://localhost:5000/api/otp/generate-otp', {
+                email,
+                phone,
+                method: 'email'
+            });
+            toast.success('OTP resent successfully to your email');
+        } catch (error) {
+            toast.error(error.response?.data.message || 'Failed to resend OTP.');
         } finally {
             setIsLoading(false);
         }
@@ -47,16 +71,14 @@ const ForgotPassword = () => {
         setIsLoading(true);
 
         try {
-            // API call to verify OTP
-            console.log('Verifying OTP:', formData.otp);
-
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            toast.success('OTP verified successfully');
+            const response = await axios.post('http://localhost:5000/api/otp/verify-otp', {
+                identifier: formData.email,
+                otp: formData.otp
+            });
+            toast.success(response.data.message);
             setStep(3);
         } catch (error) {
-            toast.error('Invalid OTP. Please try again.');
+            toast.error(error.response?.data.message || 'Invalid OTP. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -79,17 +101,15 @@ const ForgotPassword = () => {
         }
 
         try {
-            // API call to reset password
-            console.log('Resetting password');
-
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            toast.success('Password reset successful! You can now login.');
-            // Redirect to login
-            // navigate('/login');
+            const response = await axios.post('http://localhost:5000/api/auth/reset-password', {
+                email: formData.email,
+                phone: formData.phone,
+                newPassword: formData.newPassword
+            });
+            toast.success('Password changed successfully! Please login.');
+            navigate('/login');
         } catch (error) {
-            toast.error('Failed to reset password. Please try again.');
+            toast.error(error.response?.data.message || 'Failed to reset password. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -105,9 +125,11 @@ const ForgotPassword = () => {
                 >
                     <Link to="/" className="flex justify-center">
                         <div className="flex items-center space-x-2">
-                            <div className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center">
-                                <span className="text-white font-bold text-2xl">GF</span>
-                            </div>
+                            <img
+                                src="/ggu foodies.jpg"
+                                alt="GGU Foodies Logo"
+                                className="w-12 h-12 rounded-lg"
+                            />
                             <span className="text-2xl font-bold text-gray-800">GGU Foodies</span>
                         </div>
                     </Link>
@@ -115,8 +137,8 @@ const ForgotPassword = () => {
                         Forgot Password
                     </h2>
                     <p className="mt-2 text-center text-sm text-gray-600">
-                        {step === 1 && 'Enter your phone number or email to receive OTP'}
-                        {step === 2 && 'Enter the OTP sent to your contact'}
+                        {step === 1 && 'Enter your email and phone number to receive OTP'}
+                        {step === 2 && 'Enter the OTP sent to your email for password reset'}
                         {step === 3 && 'Create a new password for your account'}
                     </p>
                 </motion.div>
@@ -127,59 +149,45 @@ const ForgotPassword = () => {
                     transition={{ duration: 0.6, delay: 0.1 }}
                     className="mt-8 bg-white p-8 rounded-xl shadow-lg"
                 >
-                    {/* Step 1: Contact Information */}
                     {step === 1 && (
                         <form onSubmit={handleSendOTP} className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-4">
-                                    How would you like to receive the OTP?
+                                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Email Address
                                 </label>
-                                <div className="flex space-x-4">
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="contactMethod"
-                                            value="phone"
-                                            checked={contactMethod === 'phone'}
-                                            onChange={(e) => setContactMethod(e.target.value)}
-                                            className="mr-2"
-                                        />
-                                        Phone Number
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="contactMethod"
-                                            value="email"
-                                            checked={contactMethod === 'email'}
-                                            onChange={(e) => setContactMethod(e.target.value)}
-                                            className="mr-2"
-                                        />
-                                        Email Address
-                                    </label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <HiMail className="h-5 w-5 text-gray-400" />
+                                    </div>
+                                    <input
+                                        id="email"
+                                        name="email"
+                                        type="email"
+                                        required
+                                        className="input-field pl-10"
+                                        placeholder="Enter your email address"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                    />
                                 </div>
                             </div>
 
                             <div>
-                                <label htmlFor="contact" className="block text-sm font-medium text-gray-700 mb-2">
-                                    {contactMethod === 'phone' ? 'Phone Number' : 'Email Address'}
+                                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Phone Number
                                 </label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        {contactMethod === 'phone' ? (
-                                            <HiPhone className="h-5 w-5 text-gray-400" />
-                                        ) : (
-                                            <HiMail className="h-5 w-5 text-gray-400" />
-                                        )}
+                                        <HiPhone className="h-5 w-5 text-gray-400" />
                                     </div>
                                     <input
-                                        id="contact"
-                                        name="contact"
-                                        type={contactMethod === 'phone' ? 'tel' : 'email'}
+                                        id="phone"
+                                        name="phone"
+                                        type="tel"
                                         required
                                         className="input-field pl-10"
-                                        placeholder={contactMethod === 'phone' ? 'Enter your phone number' : 'Enter your email address'}
-                                        value={formData.contact}
+                                        placeholder="Enter your phone number"
+                                        value={formData.phone}
                                         onChange={handleChange}
                                     />
                                 </div>
@@ -199,7 +207,6 @@ const ForgotPassword = () => {
                         </form>
                     )}
 
-                    {/* Step 2: OTP Verification */}
                     {step === 2 && (
                         <form onSubmit={handleVerifyOTP} className="space-y-6">
                             <div>
@@ -233,15 +240,23 @@ const ForgotPassword = () => {
 
                             <button
                                 type="button"
+                                onClick={handleResendOTP}
+                                disabled={isLoading}
+                                className="w-full text-primary-600 hover:text-primary-500 font-medium"
+                            >
+                                Resend OTP
+                            </button>
+
+                            <button
+                                type="button"
                                 onClick={() => setStep(1)}
                                 className="w-full text-primary-600 hover:text-primary-500 font-medium"
                             >
-                                Back to Contact Information
+                                Back to Information
                             </button>
                         </form>
                     )}
 
-                    {/* Step 3: New Password */}
                     {step === 3 && (
                         <form onSubmit={handleResetPassword} className="space-y-6">
                             <div>

@@ -2,14 +2,14 @@ import { useState, useEffect, useContext } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { HiMenu, HiX, HiLogout } from 'react-icons/hi';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AuthContext } from '../context/AuthContext'; // Import AuthContext
+import { AuthContext } from '../context/AuthContext';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [activeSection, setActiveSection] = useState('');
     const location = useLocation();
     const navigate = useNavigate();
-    const { isLoggedIn, logout } = useContext(AuthContext); // Access auth state and logout function
+    const { isLoggedIn, logout } = useContext(AuthContext);
 
     const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -26,17 +26,15 @@ const Navbar = () => {
 
     const handleLogoClick = () => {
         if (isLoggedIn && location.pathname === '/home') {
-            // If logged in and on HomePage, reload HomePage
             navigate('/home');
         } else {
-            // Otherwise, go to LandingPage
             navigate('/');
         }
     };
 
     const handleLogout = () => {
-        logout(); // Clear login state and token
-        navigate('/'); // Redirect to LandingPage
+        logout();
+        navigate('/');
         setIsOpen(false);
     };
 
@@ -44,7 +42,6 @@ const Navbar = () => {
     const isSectionActive = (id) => location.pathname === '/' && activeSection === id;
 
     useEffect(() => {
-        // Reset section highlight when route changes
         setActiveSection('');
     }, [location.pathname]);
 
@@ -52,7 +49,6 @@ const Navbar = () => {
         <nav className="bg-white shadow-lg sticky top-0 z-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between items-center h-16">
-                    {/* Logo */}
                     <button onClick={handleLogoClick} className="flex items-center space-x-2">
                         <img
                             src="/ggu foodies.jpg"
@@ -62,9 +58,7 @@ const Navbar = () => {
                         <span className="text-xl font-bold text-gray-800">GGU Foodies</span>
                     </button>
 
-                    {/* Desktop Menu */}
                     <div className="hidden md:flex items-center space-x-8">
-                        {/* Home */}
                         <div className="relative">
                             {location.pathname === '/' ? (
                                 <button
@@ -86,7 +80,6 @@ const Navbar = () => {
                             )}
                         </div>
 
-                        {/* All Food Courts */}
                         <div className="relative">
                             {location.pathname === '/' ? (
                                 <button
@@ -120,7 +113,6 @@ const Navbar = () => {
                             )}
                         </div>
 
-                        {/* About */}
                         <div className="relative">
                             <Link
                                 to="/about"
@@ -133,7 +125,6 @@ const Navbar = () => {
                             </Link>
                         </div>
 
-                        {/* Admin Panel */}
                         <div className="relative">
                             <Link
                                 to="/admin-panel"
@@ -146,8 +137,7 @@ const Navbar = () => {
                             </Link>
                         </div>
 
-                        {/* Logout (only when logged in) */}
-                        {isLoggedIn && (
+                        {isLoggedIn ? (
                             <button
                                 onClick={handleLogout}
                                 className="text-gray-700 hover:text-red-600 font-medium flex items-center space-x-1"
@@ -155,10 +145,16 @@ const Navbar = () => {
                                 <HiLogout className="w-5 h-5" />
                                 <span>Logout</span>
                             </button>
+                        ) : (
+                            <Link
+                                to="/login"
+                                className="text-gray-700 hover:text-primary-600 font-medium"
+                            >
+                                Login
+                            </Link>
                         )}
                     </div>
 
-                    {/* Mobile Toggle */}
                     <div className="flex items-center">
                         <button
                             onClick={toggleMenu}
@@ -169,7 +165,6 @@ const Navbar = () => {
                     </div>
                 </div>
 
-                {/* Mobile Menu */}
                 <AnimatePresence>
                     {isOpen && (
                         <motion.div

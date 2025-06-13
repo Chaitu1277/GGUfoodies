@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { HiEye, HiEyeOff, HiMail, HiLockClosed, HiOfficeBuilding } from 'react-icons/hi';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 
 const RestaurantLogin = () => {
@@ -11,6 +12,7 @@ const RestaurantLogin = () => {
     });
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         setFormData({
@@ -24,17 +26,13 @@ const RestaurantLogin = () => {
         setIsLoading(true);
 
         try {
-            // API call to restaurant login
-            console.log('Restaurant login attempt:', formData);
-
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            toast.success('Restaurant login successful!');
-            // Redirect to restaurant dashboard
-            // navigate('/restaurant-dashboard');
+            const response = await axios.post('http://localhost:5000/api/auth/restaurant-login', formData);
+            toast.success(response.data.message || 'Restaurant login successful!');
+            // Assuming token is returned; store it
+            localStorage.setItem('token', response.data.token);
+            navigate('/restaurant-dashboard');
         } catch (error) {
-            toast.error('Login failed. Please check your credentials.');
+            toast.error(error.response?.data.message || 'Login failed. Please check your credentials.');
         } finally {
             setIsLoading(false);
         }
@@ -50,9 +48,11 @@ const RestaurantLogin = () => {
                 >
                     <Link to="/" className="flex justify-center">
                         <div className="flex items-center space-x-2">
-                            <div className="w-12 h-12 bg-accent-600 rounded-lg flex items-center justify-center">
-                                <span className="text-white font-bold text-2xl">GF</span>
-                            </div>
+                            <img
+                                src="/ggu foodies.jpg"
+                                alt="GGU Foodies Logo"
+                                className="w-12 h-12 rounded-lg"
+                            />
                             <span className="text-2xl font-bold text-gray-800">GGU Foodies</span>
                         </div>
                     </Link>

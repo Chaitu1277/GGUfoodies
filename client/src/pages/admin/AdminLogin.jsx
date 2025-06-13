@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { HiEye, HiEyeOff, HiMail, HiLockClosed, HiUserGroup } from 'react-icons/hi';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 
 const AdminLogin = () => {
@@ -11,6 +12,7 @@ const AdminLogin = () => {
     });
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         setFormData({
@@ -24,17 +26,13 @@ const AdminLogin = () => {
         setIsLoading(true);
 
         try {
-            // API call to admin login
-            console.log('Admin login attempt:', formData);
-
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            toast.success('Admin login successful!');
-            // Redirect to admin dashboard
-            // navigate('/admin-dashboard');
+            const response = await axios.post('http://localhost:5000/api/auth/admin-login', formData);
+            toast.success(response.data.message || 'Admin login successful!');
+            // Assuming token is returned; store it
+            localStorage.setItem('token', response.data.token);
+            navigate('/admin-dashboard');
         } catch (error) {
-            toast.error('Login failed. Please check your credentials.');
+            toast.error(error.response?.data.message || 'Login failed. Please check your credentials.');
         } finally {
             setIsLoading(false);
         }
@@ -50,9 +48,11 @@ const AdminLogin = () => {
                 >
                     <Link to="/" className="flex justify-center">
                         <div className="flex items-center space-x-2">
-                            <div className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center">
-                                <span className="text-white font-bold text-2xl">GF</span>
-                            </div>
+                            <img
+                                src="/ggu foodies.jpg"
+                                alt="GGU Foodies Logo"
+                                className="w-12 h-12 rounded-lg"
+                            />
                             <span className="text-2xl font-bold text-gray-800">GGU Foodies</span>
                         </div>
                     </Link>

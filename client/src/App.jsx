@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext'; // Import AuthProvider
 import LandingPage from './pages/LandingPage';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
+import CartPage from './pages/CartPage';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import AdminPanel from './pages/admin/AdminPanel';
 import RestaurantLogin from './pages/admin/RestaurantLogin';
@@ -34,6 +35,7 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/home" element={<HomePage />} />
+            <Route path="/cart" element={<CartPage />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/about" element={<About />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />

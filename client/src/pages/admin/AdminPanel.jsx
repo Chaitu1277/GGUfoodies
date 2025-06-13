@@ -14,9 +14,11 @@ const AdminPanel = () => {
                 >
                     <Link to="/" className="inline-block">
                         <div className="flex items-center justify-center space-x-2">
-                            <div className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center">
-                                <span className="text-white font-bold text-2xl">GF</span>
-                            </div>
+                            <img
+                                src="/ggu foodies.jpg"
+                                alt="GGU Foodies Logo"
+                                className="w-12 h-12 rounded-lg"
+                            />
                             <span className="text-2xl font-bold text-gray-800">GGU Foodies</span>
                         </div>
                     </Link>
