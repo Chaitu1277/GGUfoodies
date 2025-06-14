@@ -104,6 +104,21 @@ const CartPage = () => {
         {
             icon: <HiExclamationCircle className="w-5 h-5 text-red-600" />,
             text: 'If you are late, food quality may decrease as it cools down. We will not be responsible for temperature-related quality issues'
+        },
+        {
+            icon: <HiExclamationCircle className="w-5 h-5 text-red-600" />,
+            text: (
+                <span>
+                    Please verify your mobile number before proceeding to payment.{' '}
+                    <Link
+                        to="/profile"
+                        className="text-red-600 underline hover:text-red-700"
+                        onClick={() => setShowRulesPopup(false)}
+                    >
+                        Check the number
+                    </Link>
+                </span>
+            )
         }
     ];
 

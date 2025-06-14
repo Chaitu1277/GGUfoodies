@@ -7,6 +7,21 @@ export const AuthProvider = ({ children }) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [cartItems, setCartItems] = useState([]);
     const [cartCount, setCartCount] = useState(0);
+    const [user, setUser] = useState(null);
+
+    const fetchUser = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            const response = await axios.get('http://localhost:5000/api/auth/me', {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setUser(response.data.user);
+        } catch (error) {
+            console.error('Failed to fetch user:', error);
+        }
+    };
 
     const fetchCart = async () => {
         try {
@@ -27,21 +42,23 @@ export const AuthProvider = ({ children }) => {
         const token = localStorage.getItem('token');
         if (token) {
             setIsLoggedIn(true);
-            fetchCart(); // Fetch cart on mount if logged in
+            fetchUser();
+            fetchCart();
         }
     }, []);
 
     const login = async (token) => {
         localStorage.setItem('token', token);
         setIsLoggedIn(true);
-        await fetchCart(); // Fetch cart after login
+        await Promise.all([fetchUser(), fetchCart()]);
     };
 
     const logout = () => {
         localStorage.removeItem('token');
         setIsLoggedIn(false);
-        setCartItems([]); // Clear cart on logout
+        setCartItems([]);
         setCartCount(0);
+        setUser(null);
     };
 
     const updateCart = (newItems) => {
@@ -49,8 +66,12 @@ export const AuthProvider = ({ children }) => {
         setCartCount(newItems.reduce((total, item) => total + item.quantity, 0));
     };
 
+    const updateUser = (updatedUser) => {
+        setUser(updatedUser);
+    };
+
     return (
-        <AuthContext.Provider value={{ isLoggedIn, login, logout, cartItems, cartCount, updateCart }}>
+        <AuthContext.Provider value={{ isLoggedIn, login, logout, cartItems, cartCount, updateCart, user, updateUser }}>
             {children}
         </AuthContext.Provider>
     );

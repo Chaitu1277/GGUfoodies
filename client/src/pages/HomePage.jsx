@@ -31,6 +31,7 @@ const HomePage = () => {
     const [selectedFoodCourt, setSelectedFoodCourt] = useState(selectedCourt || null);
     const [selectedCategory, setSelectedCategory] = useState('All Categories');
     const [errorMessage, setErrorMessage] = useState('');
+    const [userName, setUserName] = useState('');
     const errorMessageRef = useRef(null);
 
     const foodCourts = [
@@ -122,6 +123,21 @@ const HomePage = () => {
             errorMessageRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }, [errorMessage]);
+
+    useEffect(() => {
+        const fetchUserProfile = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await axios.get('http://localhost:5000/api/auth/profile', {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                setUserName(response.data.name);
+            } catch (error) {
+                console.error('Failed to fetch user profile');
+            }
+        };
+        fetchUserProfile();
+    }, []);
 
     const handleItemClick = (itemName) => {
         setSearchQuery(itemName);
@@ -220,20 +236,13 @@ const HomePage = () => {
                             <span className="text-xl font-bold text-white">GGU Foodies</span>
                         </Link>
                         <div className="hidden md:flex items-center space-x-4">
-                            <Link to="/cart" className="relative p-2 text-white hover:text-gray-200 transition-colors">
-                                <HiShoppingCart className="w-6 h-6" />
-                                {cartCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                        {cartCount}
-                                    </span>
-                                )}
-                            </Link>
                             <div className="relative">
                                 <button
                                     onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors flex items-center space-x-2"
                                 >
                                     <HiUser className="w-6 h-6 text-gray-600" />
+                                    <span className="text-gray-600 text-sm font-medium">{userName}</span>
                                 </button>
                                 <AnimatePresence>
                                     {isProfileOpen && (
@@ -270,13 +279,22 @@ const HomePage = () => {
                                     )}
                                 </AnimatePresence>
                             </div>
+                            <Link to="/cart" className="relative p-2 text-white hover:text-gray-200 transition-colors">
+                                <HiShoppingCart className="w-6 h-6" />
+                                {cartCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                        {cartCount}
+                                    </span>
+                                )}
+                            </Link>
                         </div>
                         <div className="md:hidden">
                             <button
                                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                                className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors flex items-center space-x-2"
                             >
                                 <HiUser className="w-6 h-6 text-gray-600" />
+                                <span className="text-gray-600 text-sm font-medium">{userName}</span>
                             </button>
                         </div>
                     </div>

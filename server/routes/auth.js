@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import authMiddleware from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -39,8 +40,6 @@ router.post('/check-user', async (req, res) => {
         res.status(500).json({ message: 'Server error while checking user details' });
     }
 });
-
-
 
 // Login route
 router.post('/login', async (req, res) => {
@@ -88,7 +87,7 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
-// Admin Login route (Placeholder - customize as needed)
+// Admin Login route
 router.post('/admin-login', async (req, res) => {
     const { email, password } = req.body;
 
@@ -111,7 +110,7 @@ router.post('/admin-login', async (req, res) => {
     }
 });
 
-// Restaurant Login route (Placeholder - customize as needed)
+// Restaurant Login route
 router.post('/restaurant-login', async (req, res) => {
     const { email, password } = req.body;
 
@@ -131,6 +130,47 @@ router.post('/restaurant-login', async (req, res) => {
         res.status(200).json({ message: 'Restaurant login successful', token });
     } catch (error) {
         res.status(500).json({ message: 'Restaurant login failed. Please try again.' });
+    }
+});
+
+// Get user profile
+router.get('/profile', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.userId).select('name email phone');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        res.status(200).json(user);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to fetch profile' });
+    }
+});
+
+// Update user profile
+router.put('/profile', authMiddleware, async (req, res) => {
+    const { name, phone } = req.body;
+
+    try {
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Check if phone is already used by another user
+        if (phone && phone !== user.phone) {
+            const existingPhone = await User.findOne({ phone });
+            if (existingPhone) {
+                return res.status(400).json({ message: 'Phone number already in use' });
+            }
+        }
+
+        user.name = name || user.name;
+        user.phone = phone || user.phone;
+        await user.save();
+
+        res.status(200).json({ _id: user._id, name: user.name, email: user.email, phone: user.phone });
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to update profile' });
     }
 });
 

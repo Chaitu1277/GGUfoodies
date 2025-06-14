@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from './context/AuthContext'; // Import AuthProvider
+import { AuthProvider } from './context/AuthContext';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
@@ -12,6 +12,7 @@ import AdminLogin from './pages/admin/AdminLogin';
 import UserDashboard from './pages/UserDashboard';
 import HomePage from './pages/HomePage';
 import About from './pages/About';
+import Profile from './pages/auth/Profile';
 import './index.css';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -43,6 +44,7 @@ function App() {
             <Route path="/restaurant-login" element={<RestaurantLogin />} />
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/dashboard" element={<UserDashboard />} />
+            <Route path="/profile" element={<Profile />} />
           </Routes>
         </div>
       </Router>
