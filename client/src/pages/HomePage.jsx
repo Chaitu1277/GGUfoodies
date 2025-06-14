@@ -203,6 +203,7 @@ const HomePage = () => {
         ? restaurants.filter(restaurant => restaurant.name === selectedFoodCourt.name)
         : searchQuery
             ? restaurants.filter(restaurant =>
+                restaurant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 popularItems.some(item =>
                     item.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
                     item.court === restaurant.name
@@ -351,7 +352,7 @@ const HomePage = () => {
                         </div>
                         <input
                             type="text"
-                            placeholder="Search for food or restaurants..."
+                            placeholder="Search for food or food courts..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
@@ -610,9 +611,9 @@ const HomePage = () => {
                         <HiHome className="w-6 h-6" />
                         <span className="text-xs mt-1">Home</span>
                     </Link>
-                    <Link to="/restaurants" className="flex flex-col items-center py-2 text-gray-600">
+                    <Link to="/food-courts" className="flex flex-col items-center py-2 text-gray-600">
                         <HiOfficeBuilding className="w-6 h-6" />
-                        <span className="text-xs mt-1">Restaurants</span>
+                        <span className="text-xs mt-1">Food Courts</span>
                     </Link>
                     <Link to="/orders" className="flex flex-col items-center py-2 text-gray-600">
                         <HiClipboardList className="w-6 h-4" />

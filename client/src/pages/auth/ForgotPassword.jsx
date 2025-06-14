@@ -18,10 +18,35 @@ const ForgotPassword = () => {
     const navigate = useNavigate();
 
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        const { name, value } = e.target;
+
+        if (name === 'phone') {
+            // Allow only digits for phone
+            const numericValue = value.replace(/[^0-9]/g, '');
+            if (numericValue.length > 10) {
+                toast.error('Phone number cannot exceed 10 digits');
+                return;
+            }
+            setFormData({
+                ...formData,
+                [name]: numericValue.slice(0, 10)
+            });
+        } else if (name === 'newPassword' || name === 'confirmPassword') {
+            // Restrict password fields to 15 characters
+            if (value.length > 15) {
+                toast.error('Password cannot exceed 15 characters');
+                return;
+            }
+            setFormData({
+                ...formData,
+                [name]: value.slice(0, 15)
+            });
+        } else {
+            setFormData({
+                ...formData,
+                [name]: value
+            });
+        }
     };
 
     const handleSendOTP = async (e) => {

@@ -1,18 +1,20 @@
 import { useState, useEffect, useContext } from 'react';
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { HiArrowLeft, HiPencil, HiCheck } from 'react-icons/hi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom'; // Import useNavigate
+import { HiUser, HiShoppingCart, HiEye, HiClipboardList, HiLogout, HiPencil, HiCheck } from 'react-icons/hi';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { AuthContext } from '../../context/AuthContext';
 
 const Profile = () => {
-    const { isLoggedIn } = useContext(AuthContext);
-    const [user, setUser] = useState({ name: '', email: '', phone: '' });
+    const { isLoggedIn, logout, cartCount, user, updateUser } = useContext(AuthContext); // Destructure user and updateUser
+    const navigate = useNavigate(); // Use navigate for routing
+    const [userData, setUserData] = useState({ name: '', email: '', phone: '' });
     const [isEditing, setIsEditing] = useState(false);
     const [editedUser, setEditedUser] = useState({ name: '', phone: '' });
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [userName, setUserName] = useState('');
 
     useEffect(() => {
         if (isLoggedIn) {
@@ -26,8 +28,9 @@ const Profile = () => {
             const response = await axios.get('http://localhost:5000/api/auth/profile', {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            setUser(response.data);
+            setUserData(response.data);
             setEditedUser({ name: response.data.name, phone: response.data.phone });
+            setUserName(response.data.name);
         } catch (error) {
             toast.error('Failed to fetch profile');
         }
@@ -38,6 +41,22 @@ const Profile = () => {
     };
 
     const handleSave = async () => {
+        // Validate name length
+        if (editedUser.name.length > 15) {
+            toast.error('Name cannot exceed 15 characters');
+            return;
+        }
+
+        // Validate phone length and ensure it's numeric
+        if (editedUser.phone.length > 10) {
+            toast.error('Phone number cannot exceed 10 digits');
+            return;
+        }
+        if (!/^\d{0,10}$/.test(editedUser.phone)) {
+            toast.error('Phone number must contain only digits');
+            return;
+        }
+
         try {
             const token = localStorage.getItem('token');
             const response = await axios.put(
@@ -45,7 +64,9 @@ const Profile = () => {
                 editedUser,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            setUser(response.data);
+            setUserData(response.data);
+            setUserName(response.data.name);
+            updateUser(response.data); // Update user in context
             setIsEditing(false);
             toast.success('Profile updated successfully');
         } catch (error) {
@@ -54,28 +75,171 @@ const Profile = () => {
     };
 
     const handleChange = (e) => {
-        setEditedUser({ ...editedUser, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        if (name === 'name' && value.length > 15) {
+            toast.error('Name cannot exceed 15 characters');
+            return;
+        }
+        if (name === 'phone') {
+            if (value.length > 10) {
+                toast.error('Phone number cannot exceed 10 digits');
+                return;
+            }
+            if (!/^\d*$/.test(value)) {
+                toast.error('Phone number must contain only digits');
+                return;
+            }
+        }
+        setEditedUser({ ...editedUser, [name]: value });
+    };
+
+    const handleLogout = () => {
+        logout();
+        navigate('/'); // Navigate to landing page after logout
+        setIsProfileOpen(false);
     };
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <Navbar />
+            <nav className="bg-gradient-to-r from-primary-600 to-primary-700 text-white sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between items-center h-16">
+                        <div className="flex items-center space-x-4">
+                            <Link to="/home" className="flex items-center space-x-2">
+                                <img
+                                    src="/ggu foodies.jpg"
+                                    alt="GGU Foodies Logo"
+                                    className="w-10 h-10 rounded-lg"
+                                />
+                                <span className="text-xl font-bold text-white">GGU Foodies</span>
+                            </Link>
+                        </div>
+                        <div className="hidden md:flex items-center space-x-4">
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors flex items-center space-x-2"
+                                >
+                                    <HiUser className="w-6 h-6 text-gray-600" />
+                                    <span className="text-gray-600 text-sm font-medium">{userName}</span>
+                                </button>
+                                <AnimatePresence>
+                                    {isProfileOpen && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-md border border-gray-100 py-2"
+                                        >
+                                            <Link
+                                                to="/profile"
+                                                className="flex items-center px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600"
+                                                onClick={() => setIsProfileOpen(false)}
+                                            >
+                                                <HiEye className="w-4 h-4 mr-2" />
+                                                View Profile
+                                            </Link>
+                                            <Link
+                                                to="/orders"
+                                                className="flex items-center px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600"
+                                                onClick={() => setIsProfileOpen(false)}
+                                            >
+                                                <HiClipboardList className="w-4 h-4 mr-2" />
+                                                Orders
+                                            </Link>
+                                            <button
+                                                onClick={handleLogout}
+                                                className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600"
+                                            >
+                                                <HiLogout className="w-4 h-4 mr-2" />
+                                                Logout
+                                            </button>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                            <Link to="/cart" className="relative p-2 text-white hover:text-gray-200 transition-colors">
+                                <HiShoppingCart className="w-6 h-6" />
+                                {cartCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                        {cartCount}
+                                    </span>
+                                )}
+                            </Link>
+                        </div>
+                        <div className="md:hidden">
+                            <button
+                                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors flex items-center space-x-2"
+                            >
+                                <HiUser className="w-6 h-6 text-gray-600" />
+                                <span className="text-gray-600 text-sm font-medium">{userName}</span>
+                            </button>
+                        </div>
+                    </div>
+                    <AnimatePresence>
+                        {isProfileOpen && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                className="md:hidden bg-white border-t border-gray-100 py-2"
+                            >
+                                <Link
+                                    to="/profile"
+                                    className="flex items-center px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600"
+                                    onClick={() => setIsProfileOpen(false)}
+                                >
+                                    <HiEye className="w-4 h-4 mr-2" />
+                                    View Profile
+                                </Link>
+                                <Link
+                                    to="/orders"
+                                    className="flex items-center px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600"
+                                    onClick={() => setIsProfileOpen(false)}
+                                >
+                                    <HiClipboardList className="w-4 h-4 mr-2" />
+                                    Orders
+                                </Link>
+                                <Link
+                                    to="/cart"
+                                    className="flex items-center px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600"
+                                    onClick={() => setIsProfileOpen(false)}
+                                >
+                                    <HiShoppingCart className="w-4 h-4 mr-2" />
+                                    Cart ({cartCount})
+                                </Link>
+                                <button
+                                    onClick={handleLogout}
+                                    className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600"
+                                >
+                                    <HiLogout className="w-4 h-4 mr-2" />
+                                    Logout
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            </nav>
+
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="flex items-center space-x-2 mb-6">
+                    <Link
+                        to="/home"
+                        className="text-gray-600 hover:text-red-600 text-sm font-medium"
+                    >
+                        Home
+                    </Link>
+                    <span className="text-gray-600">/</span>
+                    <span className="text-gray-800 text-sm font-medium">Profile</span>
+                </div>
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
                     className="bg-white rounded-xl shadow-lg p-8"
                 >
-                    <div className="flex items-center space-x-3 mb-6">
-                        <Link
-                            to="/home"
-                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                        >
-                            <HiArrowLeft className="w-6 h-6 text-gray-600" />
-                        </Link>
-                        <h1 className="text-2xl font-bold text-gray-800">Your Profile</h1>
-                    </div>
+                    <h1 className="text-2xl font-bold text-gray-800 mb-6">Your Profile</h1>
 
                     <div className="space-y-6">
                         <div>
@@ -89,13 +253,13 @@ const Profile = () => {
                                     className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
                                 />
                             ) : (
-                                <p className="mt-1 text-gray-900">{user.name}</p>
+                                <p className="mt-1 text-gray-900">{userData.name}</p>
                             )}
                         </div>
 
                         <div>
                             <label className="block text-sm font-medium text-gray-700">Email</label>
-                            <p className="mt-1 text-gray-900">{user.email}</p>
+                            <p className="mt-1 text-gray-900">{userData.email}</p>
                         </div>
 
                         <div>
@@ -109,7 +273,7 @@ const Profile = () => {
                                     className="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
                                 />
                             ) : (
-                                <p className="mt-1 text-gray-900">{user.phone}</p>
+                                <p className="mt-1 text-gray-900">{userData.phone}</p>
                             )}
                         </div>
 

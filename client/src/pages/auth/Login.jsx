@@ -18,10 +18,24 @@ const Login = () => {
     const { login } = useContext(AuthContext);
 
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        const { name, value } = e.target;
+
+        if (name === 'password') {
+            // Restrict password to 15 characters
+            if (value.length > 15) {
+                toast.error('Password cannot exceed 15 characters');
+                return;
+            }
+            setFormData({
+                ...formData,
+                [name]: value.slice(0, 15)
+            });
+        } else {
+            setFormData({
+                ...formData,
+                [name]: value
+            });
+        }
     };
 
     const handleSubmit = async (e) => {

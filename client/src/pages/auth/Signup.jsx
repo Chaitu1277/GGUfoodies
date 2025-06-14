@@ -21,6 +21,7 @@ const Signup = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [otpSent, setOtpSent] = useState(false);
     const [errors, setErrors] = useState({
+        name: '',
         email: '',
         phone: '',
         password: ''
@@ -32,18 +33,69 @@ const Signup = () => {
         const { name, value } = e.target;
 
         if (name === 'phone') {
-            // Allow only digits and restrict to 10 characters for phone
+            // Allow only digits for phone
             const numericValue = value.replace(/[^0-9]/g, '');
+            if (numericValue.length > 10) {
+                setErrors(prev => ({
+                    ...prev,
+                    phone: 'Phone number must be exactly 10 digits'
+                }));
+                toast.error('Phone number cannot exceed 10 digits');
+                return;
+            }
             setFormData({
                 ...formData,
                 [name]: numericValue.slice(0, 10)
             });
+            // Clear error if user corrects the input
+            if (numericValue.length <= 10) {
+                setErrors(prev => ({
+                    ...prev,
+                    phone: ''
+                }));
+            }
         } else if (name === 'password') {
             // Restrict password to 15 characters
+            if (value.length > 15) {
+                setErrors(prev => ({
+                    ...prev,
+                    password: 'Password cannot exceed 15 characters'
+                }));
+                toast.error('Password cannot exceed 15 characters');
+                return;
+            }
             setFormData({
                 ...formData,
                 [name]: value.slice(0, 15)
             });
+            // Clear error if user corrects the input
+            if (value.length <= 15) {
+                setErrors(prev => ({
+                    ...prev,
+                    password: ''
+                }));
+            }
+        } else if (name === 'name') {
+            // Restrict name to 15 characters
+            if (value.length > 15) {
+                setErrors(prev => ({
+                    ...prev,
+                    name: 'Name cannot exceed 15 characters'
+                }));
+                toast.error('Name cannot exceed 15 characters');
+                return;
+            }
+            setFormData({
+                ...formData,
+                [name]: value.slice(0, 15)
+            });
+            // Clear error if user corrects the input
+            if (value.length <= 15) {
+                setErrors(prev => ({
+                    ...prev,
+                    name: ''
+                }));
+            }
         } else {
             setFormData({
                 ...formData,
@@ -51,11 +103,11 @@ const Signup = () => {
             });
         }
 
-        // Clear error message when user starts typing
-        setErrors({
-            ...errors,
+        // Clear other error messages when user starts typing
+        setErrors(prev => ({
+            ...prev,
             [name]: ''
-        });
+        }));
     };
 
     const handleOtpChange = (e) => {
@@ -68,35 +120,49 @@ const Signup = () => {
     const handleGenerateOtp = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        setErrors({ email: '', phone: '', password: '' });
+        setErrors({ name: '', email: '', phone: '', password: '' });
 
         try {
-            const { email, phone, password } = formData;
+            const { email, phone, password, name } = formData;
 
-            // Validate phone number length
-            if (phone.length !== 10) {
-                setErrors((prev) => ({
+            // Validate name
+            if (name.length === 0) {
+                setErrors(prev => ({ ...prev, name: 'Name is required' }));
+                toast.error('Please enter your name');
+                setIsLoading(false);
+                return;
+            }
+
+            // Validate at least one of email or phone is provided
+            if (!email && !phone) {
+                setErrors(prev => ({
+                    ...prev,
+                    email: 'Email or phone is required',
+                    phone: 'Email or phone is required'
+                }));
+                toast.error('Please provide either email or phone number');
+                setIsLoading(false);
+                return;
+            }
+
+            // Validate phone number
+            if (phone && phone.length !== 10) {
+                setErrors(prev => ({
                     ...prev,
                     phone: 'Phone number must be exactly 10 digits'
                 }));
+                toast.error('Phone number must be exactly 10 digits');
                 setIsLoading(false);
                 return;
             }
 
-            // Validate password length (10 to 15 characters)
+            // Validate password
             if (password.length < 10) {
-                setErrors((prev) => ({
+                setErrors(prev => ({
                     ...prev,
                     password: 'Password must be at least 10 characters'
                 }));
-                setIsLoading(false);
-                return;
-            }
-            if (password.length > 15) {
-                setErrors((prev) => ({
-                    ...prev,
-                    password: 'Password cannot exceed 15 characters'
-                }));
+                toast.error('Password must be at least 10 characters');
                 setIsLoading(false);
                 return;
             }
@@ -111,25 +177,23 @@ const Signup = () => {
                 const { emailExists, phoneExists } = checkResponse.data;
 
                 if (emailExists || phoneExists) {
-                    setErrors((prev) => ({
+                    setErrors(prev => ({
                         ...prev,
                         email: emailExists ? 'Email already exists' : '',
                         phone: phoneExists ? 'Phone number already exists' : ''
                     }));
+                    if (emailExists) toast.error('Email already exists');
+                    if (phoneExists) toast.error('Phone number already exists');
                     setIsLoading(false);
                     return;
                 }
             } catch (error) {
-                setErrors((prev) => ({
-                    ...prev,
-                    email: 'Failed to check email. Please try again.',
-                    phone: 'Failed to check phone number. Please try again.'
-                }));
+                toast.error('Failed to check user details. Please try again.');
                 setIsLoading(false);
                 return;
             }
 
-            // If no errors, proceed to generate OTP
+            // Generate OTP
             const method = email ? 'email' : 'phone';
             const identifier = email || phone;
             const response = await axios.post('http://localhost:5000/api/otp/generate-otp', {
@@ -137,11 +201,12 @@ const Signup = () => {
                 phone,
                 method
             });
+
             setOtpData({ ...otpData, identifier });
             setOtpSent(true);
-            toast.success(response.data.message);
+            toast.success('OTP sent successfully! Please check your ' + (email ? 'email' : 'phone'));
         } catch (error) {
-            toast.error(error.response?.data.message || 'Failed to send OTP.');
+            toast.error(error.response?.data.message || 'Failed to send OTP. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -149,18 +214,16 @@ const Signup = () => {
 
     const handleResendOtp = async () => {
         setIsLoading(true);
-
         try {
             const { email, phone } = formData;
             const method = email ? 'email' : 'phone';
             const identifier = email || phone;
-            const response = await axios.post('http://localhost:5000/api/otp/generate-otp', {
+            await axios.post('http://localhost:5000/api/otp/generate-otp', {
                 email,
                 phone,
                 method
             });
-            setOtpData({ ...otpData, identifier });
-            toast.success('OTP resent successfully');
+            toast.success('OTP resent successfully! Please check your ' + (email ? 'email' : 'phone'));
         } catch (error) {
             toast.error(error.response?.data.message || 'Failed to resend OTP.');
         } finally {
@@ -177,13 +240,13 @@ const Signup = () => {
             const otpResponse = await axios.post('http://localhost:5000/api/otp/verify-otp', otpData);
             toast.success(otpResponse.data.message);
 
-            // Immediately proceed to create the account after OTP verification
+            // Create account
             const signupResponse = await axios.post('http://localhost:5000/api/auth/signup', formData);
-            toast.success('Account created successfully');
+            toast.success('Account created successfully! Redirecting to login...');
             login(signupResponse.data.token);
 
             // Redirect to login page
-            navigate('/login');
+            setTimeout(() => navigate('/login'), 2000);
         } catch (error) {
             if (error.response?.data.message.includes('OTP')) {
                 toast.error(error.response?.data.message || 'OTP verification failed.');
@@ -250,12 +313,16 @@ const Signup = () => {
                                         type="text"
                                         autoComplete="off"
                                         required
-                                        className="input-field pl-10"
-                                        placeholder="Enter your full name"
+                                        className={`input-field pl-10 ${errors.name ? 'border-red-500' : ''}`}
+                                        placeholder="Enter your full name (max 15 chars)"
                                         value={formData.name}
                                         onChange={handleChange}
+                                    // Removed maxLength to allow toast to trigger
                                     />
                                 </div>
+                                {errors.name && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+                                )}
                             </div>
 
                             <div>
@@ -271,7 +338,7 @@ const Signup = () => {
                                         name="email"
                                         type="email"
                                         autoComplete="off"
-                                        className="input-field pl-10"
+                                        className={`input-field pl-10 ${errors.email ? 'border-red-500' : ''}`}
                                         placeholder="Enter your email"
                                         value={formData.email}
                                         onChange={handleChange}
@@ -295,11 +362,11 @@ const Signup = () => {
                                         name="phone"
                                         type="tel"
                                         autoComplete="off"
-                                        className="input-field pl-10"
-                                        placeholder="Enter your phone number"
+                                        className={`input-field pl-10 ${errors.phone ? 'border-red-500' : ''}`}
+                                        placeholder="Enter 10-digit phone number"
                                         value={formData.phone}
                                         onChange={handleChange}
-                                        maxLength="10"
+                                    // Removed maxLength to allow toast to trigger
                                     />
                                 </div>
                                 {errors.phone && (
@@ -321,11 +388,11 @@ const Signup = () => {
                                         type={showPassword ? 'text' : 'password'}
                                         autoComplete="new-password"
                                         required
-                                        className="input-field pl-10 pr-10"
-                                        placeholder="Create a password"
+                                        className={`input-field pl-10 pr-10 ${errors.password ? 'border-red-500' : ''}`}
+                                        placeholder="Create password (10-15 chars)"
                                         value={formData.password}
                                         onChange={handleChange}
-                                        maxLength="15"
+                                    // Removed maxLength to allow toast to trigger
                                     />
                                     <button
                                         type="button"
@@ -342,13 +409,16 @@ const Signup = () => {
                                 {errors.password && (
                                     <p className="text-red-500 text-xs mt-1">{errors.password}</p>
                                 )}
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Password must be 10-15 characters
+                                </p>
                             </div>
                         </div>
                     ) : (
                         <div className="space-y-4">
                             <div>
                                 <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
-                                    OTP
+                                    OTP Verification
                                 </label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -361,19 +431,23 @@ const Signup = () => {
                                         autoComplete="off"
                                         required
                                         className="input-field pl-10"
-                                        placeholder="Enter the OTP"
+                                        placeholder="Enter the 6-digit OTP"
                                         value={otpData.otp}
                                         onChange={handleOtpChange}
+                                        maxLength="6"
                                     />
                                 </div>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    We've sent a 6-digit OTP to {otpData.identifier}
+                                </p>
                             </div>
                             <button
                                 type="button"
                                 onClick={handleResendOtp}
                                 disabled={isLoading}
-                                className="w-full text-primary-600 hover:text-primary-500 font-medium"
+                                className="w-full text-primary-600 hover:text-primary-500 font-medium text-sm"
                             >
-                                Resend OTP
+                                {isLoading ? 'Resending OTP...' : 'Resend OTP'}
                             </button>
                         </div>
                     )}

@@ -13,6 +13,7 @@ import UserDashboard from './pages/UserDashboard';
 import HomePage from './pages/HomePage';
 import About from './pages/About';
 import Profile from './pages/auth/Profile';
+import FoodCourtsPage from './pages/FoodCourtsPage';
 import './index.css';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -45,6 +46,7 @@ function App() {
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/dashboard" element={<UserDashboard />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/food-courts" element={<FoodCourtsPage />} />
           </Routes>
         </div>
       </Router>
