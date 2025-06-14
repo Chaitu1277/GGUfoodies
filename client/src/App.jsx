@@ -16,6 +16,7 @@ import Profile from './pages/auth/Profile';
 import FoodCourtsPage from './pages/FoodCourtsPage';
 import './index.css';
 import ScrollToTop from './components/ScrollToTop';
+import Orders from './pages/Orders';
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
             <Route path="/dashboard" element={<UserDashboard />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/food-courts" element={<FoodCourtsPage />} />
+            <Route path="/orders" element={<Orders />} />
           </Routes>
         </div>
       </Router>

@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import Payment from '../components/Payment';
 import {
     HiArrowLeft,
     HiPlus,
@@ -18,6 +19,7 @@ const CartPage = () => {
     const { cartItems, updateCart } = useContext(AuthContext);
     const [orderType, setOrderType] = useState('');
     const [showRulesPopup, setShowRulesPopup] = useState(false);
+    const [showPayment, setShowPayment] = useState(false);
     const [acceptedRules, setAcceptedRules] = useState(false);
 
     const updateQuantity = async (itemName, newQuantity) => {
@@ -75,13 +77,8 @@ const CartPage = () => {
     };
 
     const handleProceedToPayment = () => {
-        if (!acceptedRules) {
-            toast.error('Please accept the terms and conditions');
-            return;
-        }
         setShowRulesPopup(false);
-        toast.success('Proceeding to payment gateway...');
-        // Navigate to payment page (implement as needed)
+        setShowPayment(true);
     };
 
     const rules = [
@@ -396,6 +393,16 @@ const CartPage = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+            {showPayment && (
+                <Payment
+                    orderType={orderType}
+                    cartItems={cartItems}
+                    subtotal={calculateSubtotal()}
+                    serviceCharge={calculateServiceCharge()}
+                    total={calculateTotal()}
+                    onClose={() => setShowPayment(false)}
+                />
+            )}
         </div>
     );
 };
